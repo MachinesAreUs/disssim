@@ -2,7 +2,7 @@ defmodule Disssim.Model do
 
   defmodule Client do
     @keys [:id, :service, :request_rate]
-    @enforce_keys
+    @enforce_keys @keys
     defstruct @keys
 
     def new(opts) do
@@ -45,8 +45,6 @@ defmodule Disssim.Model do
   end
 
   defmodule Resource do
-    use GenServer
-
     @keys [:id, :min_latency, :max_latency, :fail_rate]
     @enforce_keys @keys
     defstruct @keys
