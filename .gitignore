@@ -24,3 +24,7 @@ disssim-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Git temporal files
+*.swp
+*.swo
