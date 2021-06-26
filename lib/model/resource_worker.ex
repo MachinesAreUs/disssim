@@ -1,5 +1,6 @@
 defmodule Disssim.Model.ResourceWorker do
   use GenServer
+  require Logger
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts)
@@ -14,7 +15,7 @@ defmodule Disssim.Model.ResourceWorker do
   def handle_call({:request, payload}, _from, resource) do
     req_time = delay(resource)
     response = gen_response(payload, req_time, resource)
-    IO.puts "Handling request form #{inspect(self())}"
+    Logger.debug "Handling res request form #{inspect(self())}"
     {:reply, response, resource}
   end
 

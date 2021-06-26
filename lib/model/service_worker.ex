@@ -1,5 +1,6 @@
 defmodule Disssim.Model.ServiceWorker do
   use GenServer
+  require Logger
 
   alias Disssim.Model.Resource
 
@@ -16,7 +17,7 @@ defmodule Disssim.Model.ServiceWorker do
   def handle_call({:request, payload}, _from, resource) do
     req_time = delay(resource)
     response = gen_response(payload, req_time, resource)
-    IO.puts "Handling svc request form #{inspect(self())}"
+    Logger.debug "Handling svc request form #{inspect(self())}"
     {:reply, response, resource}
   end
 

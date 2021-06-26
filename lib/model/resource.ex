@@ -17,8 +17,8 @@ defmodule Disssim.Model.Resource do
 
   def start(opts) do
     resource = new(opts)
-    {:ok, pool_pid} = Pool.create(:resource, resource, opts)
-    {:ok, resource_pid} = Agent.start(fn -> %{pool_pid: pool_pid, resource: resource} end)
+    {:ok, pool_pid} = Pool.create(Disssim.Model.ResourceWorker, resource, opts)
+    Agent.start(fn -> %{pool_pid: pool_pid, resource: resource} end)
   end
 
   def call(resource_pid, {:request, payload} = req) when is_binary(payload) do
