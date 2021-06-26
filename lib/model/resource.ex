@@ -3,7 +3,7 @@ defmodule Disssim.Model.Resource do
   @enforce_keys @keys
   defstruct @keys
 
-  @max_timeout 60_000
+  alias Disssim.Util.Pool
 
   def new(opts) do
     struct(%__MODULE__{
@@ -17,22 +17,12 @@ defmodule Disssim.Model.Resource do
 
   def start(opts) do
     resource = new(opts)
-    pool_config = [
-        name: {:local, String.to_atom(resource.id)}, #fix this
-        worker_module: Disssim.Model.ResourceWorker,
-        size: resource.concurrency,
-        max_overflow: 0,
-        strategy: :fifo
-    ]
-    {:ok, pool_id} = :poolboy.start(pool_config, opts)
-    {:ok, resource_pid} = Agent.start(fn -> %{pool_id: pool_id, resource: resource} end)
+    {:ok, pool_pid} = Pool.create(:resource, resource, opts)
+    {:ok, resource_pid} = Agent.start(fn -> %{pool_pid: pool_pid, resource: resource} end)
   end
 
   def send(resource_pid, {:request, payload} = req) when is_binary(payload) do
-    pool_name =
-      resource_pid
-      |> Agent.get(fn state -> state.resource.id end)
-      |> String.to_atom() # fix this
-    :poolboy.transaction(pool_name, fn pid -> GenServer.call(pid, req, @max_timeout) end)
+    pool_id = Agent.get(resource_pid, fn state -> state.resource.id end)
+    Pool.call(pool_id, req)
   end
 end
