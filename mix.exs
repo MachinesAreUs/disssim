@@ -21,7 +21,8 @@ defmodule Disssim.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:uuid, "~> 1.1"}
+      {:uuid, "~> 1.1"},
+      {:poolboy, "~> 1.5"}
     ]
   end
 end
