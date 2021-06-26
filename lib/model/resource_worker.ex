@@ -26,7 +26,7 @@ defmodule Disssim.Model.ResourceWorker do
 
   defp gen_response(payload, req_time, resource) do
     case :rand.uniform() do
-      p when p <= resource.fail_rate ->
+      p when p >= resource.fail_rate ->
         rand = :rand.uniform(100) |> Integer.to_string
         {:response, payload <> "-" <> rand, req_time: req_time}
       _ ->

@@ -14,20 +14,6 @@ defmodule Disssim.Model do
     end
   end
 
-  defmodule Service do
-    @keys [:id, :resources, :max_capacity]
-    @enforce_keys @keys
-    defstruct @keys
-
-    def new(opts) do
-      struct(%__MODULE__{
-        id: UUID.uuid1(),
-        resources: [],
-        max_capacity: 0
-      }, opts)
-    end
-  end
-
   defmodule CircuitBreaker do
     @keys [:id, :resource, :timeout, :threshold, :delay]
     @enforce_keys @keys
