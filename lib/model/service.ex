@@ -41,7 +41,9 @@ defmodule Disssim.Model.Service do
     catch
       :exit, {:timeout, _} ->
         Logger.warning "Request to svc #{inspect(pid)} failed: Connection timeout"
-        update_stats(:response, pid, {:error, :timeout})
+        response = {:error, :timeout}
+        update_stats(:response, pid, response)
+        response
     end
   end
 
