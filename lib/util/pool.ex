@@ -7,16 +7,6 @@ defmodule Disssim.Util.Pool do
     strategy: :fifo
   ]
 
-  def create(:resource, resource, worker_opts) do
-    pool_opts = [
-        name: {:local, pool_name(resource)},
-        worker_module: Disssim.Model.ResourceWorker,
-        size: resource.concurrency,
-    ] |> Keyword.merge(@pool_opts)
-
-    start_pool(pool_opts, worker_opts)
-  end
-
   def create(worker_module, resource, worker_opts) do
     pool_opts = [
         name: {:local, pool_name(resource)},
@@ -29,7 +19,9 @@ defmodule Disssim.Util.Pool do
 
   def call(pool_id, msg) do
     pool_name = String.to_atom(pool_id) # fix this
-    :poolboy.transaction(pool_name, fn pid -> GenServer.call(pid, msg, @max_timeout) end)
+    :poolboy.transaction(pool_name, fn pid ->
+      GenServer.call(pid, msg, @max_timeout)
+    end)
   end
 
   defp pool_name(resource) do
@@ -39,5 +31,4 @@ defmodule Disssim.Util.Pool do
   defp start_pool(pool_opts, worker_opts) do
     :poolboy.start(pool_opts, worker_opts)
   end
-
 end
