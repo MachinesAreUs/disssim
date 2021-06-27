@@ -21,8 +21,8 @@ defmodule Disssim.Model.Resource do
     Agent.start(fn -> %{pool_pid: pool_pid, resource: resource} end)
   end
 
-  def call(resource_pid, {:request, payload} = req) when is_binary(payload) do
-    pool_id = Agent.get(resource_pid, fn state -> state.resource.id end)
+  def call(pid, {:request, payload} = req) when is_binary(payload) do
+    pool_id = Agent.get(pid, fn state -> state.resource.id end)
     Pool.call(pool_id, req)
   end
 end
