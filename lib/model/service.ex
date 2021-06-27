@@ -4,6 +4,7 @@ defmodule Disssim.Model.Service do
   defstruct @keys
 
   alias Disssim.Util.Pool
+  require Logger
 
   def new(opts) do
     struct(%__MODULE__{
@@ -33,11 +34,15 @@ defmodule Disssim.Model.Service do
   def call(pid, {:request, payload} = req) when is_binary(payload) do
     state = update_stats(:request, pid)
 
-    response = Pool.call(state.resource.id, req)
-
-    update_stats(:response, pid, response)
-
-    response
+    try do
+      response = Pool.call(state.resource.id, req)
+      update_stats(:response, pid, response)
+      response
+    catch
+      :exit, {:timeout, _} ->
+        Logger.warning "Request to svc #{inspect(pid)} failed: Connection timeout"
+        update_stats(:response, pid, {:error, :timeout})
+    end
   end
 
   defp update_stats(:request, pid) do
