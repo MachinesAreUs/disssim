@@ -15,9 +15,10 @@ defmodule Disssim.Model.ServiceWorker do
 
   @impl true
   def handle_call({:request, payload}, _from, resource) do
+    Logger.debug "Handling svc request form #{inspect(self())}"
+
     req_time = delay(resource)
     response = gen_response(payload, req_time, resource)
-    Logger.debug "Handling svc request form #{inspect(self())}"
     {:reply, response, resource}
   end
 
