@@ -33,6 +33,8 @@ defmodule Disssim.Model.Resource do
     end)
   end
 
+  def state(pid), do: Agent.get(pid, &(&1))
+
   def call(pid, {:request, payload} = req) when is_binary(payload) do
     state = update_stats(:request, pid)
 
