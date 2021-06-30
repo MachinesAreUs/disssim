@@ -22,7 +22,8 @@ defmodule Disssim.MixProject do
   defp deps do
     [
       {:uuid, "~> 1.1"},
-      {:poolboy, "~> 1.5"}
+      {:poolboy, "~> 1.5"},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
     ]
   end
 end
