@@ -20,17 +20,31 @@ defmodule Disssim.Model.Client do
 
   def start(opts) do
     client = new(opts)
-    Agent.start(fn -> client end)
+    Agent.start(fn ->
+      %{
+        client: client,
+        stats: %{
+          total_reqs: 0,
+          fail_reqs: 0,
+          timeout_reqs: 0,
+          fail_rate: 0
+        }
+      }
+    end)
   end
 
   def state(pid), do: Agent.get(pid, &(&1))
 
-  def update_status(pid, status) when status in @states do
-    Agent.update(pid, &(%{&1 | status: status}))
+  defp update_status(pid, status) when status in @states do
+    Agent.update(pid, fn state ->
+      new_client = %{state.client | status: status}
+      %{state | client: new_client}
+    end)
   end
 
   def play(pid) do
-    client = state(pid)
+    state = state(pid)
+    client = state.client
     case client.status do
       :running ->
         {:error, "#{inspect(pid)} is already running."}
@@ -44,7 +58,8 @@ defmodule Disssim.Model.Client do
   end
 
   def pause(pid) do
-    client = state(pid)
+    state = state(pid)
+    client = state.client
     case client.status do
       :running ->
         update_status(pid, :paused)
@@ -55,7 +70,8 @@ defmodule Disssim.Model.Client do
   end
 
   defp call_indefinitely(pid) do
-    client = state(pid)
+    state = state(pid)
+    client = state.client
     case client.status do
       :running ->
         call_and_wait(pid, client, {:request, "msg from client!"})
@@ -66,7 +82,8 @@ defmodule Disssim.Model.Client do
   end
 
   def call(pid, {:request, payload} = req) when is_binary(payload) do
-    client = Agent.get(pid, fn client -> client end)
+    state = state(pid)
+    client = state.client
     Service.call(client.resource, req)
   end
 
