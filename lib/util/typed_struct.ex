@@ -12,9 +12,10 @@ defmodule Util.TypedStruct do
       defmodule unquote(name) do
         @enforce_keys unquote(keys)
         defstruct unquote(keys)
+
         @type t :: %__MODULE__{
-          unquote_splicing(attrs)
-        }
+                unquote_splicing(attrs)
+              }
       end
     end
   end

@@ -13,7 +13,7 @@ defmodule Disssim.Model.ResourceWorker do
 
   @impl true
   def handle_call({:request, payload}, _from, resource) do
-    Logger.debug "Handling res request form #{inspect(self())}"
+    Logger.debug("Handling res request form #{inspect(self())}")
 
     req_time = delay(resource)
     response = gen_response(payload, req_time, resource)
@@ -29,8 +29,9 @@ defmodule Disssim.Model.ResourceWorker do
   defp gen_response(payload, req_time, resource) do
     case :rand.uniform() do
       p when p >= resource.fail_rate ->
-        rand = :rand.uniform(100) |> Integer.to_string
+        rand = :rand.uniform(100) |> Integer.to_string()
         {:response, payload <> "-" <> rand, req_time: req_time}
+
       _ ->
         {:error, "duh!"}
     end

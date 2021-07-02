@@ -15,7 +15,7 @@ defmodule Disssim.Model.ServiceWorker do
 
   @impl true
   def handle_call({:request, payload}, _from, resource) do
-    Logger.debug "Handling svc request form #{inspect(self())}"
+    Logger.debug("Handling svc request form #{inspect(self())}")
 
     req_time = delay(resource)
     response = gen_response(payload, req_time, resource)
@@ -45,9 +45,9 @@ defmodule Disssim.Model.ServiceWorker do
     req_time =
       responses
       |> Enum.map(fn {:response, _, req_time: delay} -> delay end)
-      |> Enum.sum
+      |> Enum.sum()
 
-    {:response, resp_payload, req_time:  req_time}
+    {:response, resp_payload, req_time: req_time}
   end
 
   defp gen_response(false, _) do

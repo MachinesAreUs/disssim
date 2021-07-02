@@ -7,18 +7,22 @@ defmodule Disssim.Model.Resource do
   require Logger
 
   def new(opts) do
-    struct(%__MODULE__{
-      id: UUID.uuid1(),
-      min_latency: 0,
-      max_latency: 0,
-      fail_rate: 0,
-      concurrency: 0
-    }, opts)
+    struct(
+      %__MODULE__{
+        id: UUID.uuid1(),
+        min_latency: 0,
+        max_latency: 0,
+        fail_rate: 0,
+        concurrency: 0
+      },
+      opts
+    )
   end
 
   def start(opts) do
     resource = new(opts)
     {:ok, pool_pid} = Pool.create(Disssim.Model.ResourceWorker, resource, opts)
+
     Agent.start(fn ->
       %{
         pool_pid: pool_pid,
@@ -33,7 +37,7 @@ defmodule Disssim.Model.Resource do
     end)
   end
 
-  def state(pid), do: Agent.get(pid, &(&1))
+  def state(pid), do: Agent.get(pid, & &1)
 
   def call(pid, {:request, payload} = req) when is_binary(payload) do
     state = update_stats(:request, pid)
@@ -44,7 +48,7 @@ defmodule Disssim.Model.Resource do
       response
     catch
       :exit, {:timeout, _} ->
-        Logger.warning "Request to res #{inspect(pid)} failed: Connection timeout"
+        Logger.warning("Request to res #{inspect(pid)} failed: Connection timeout")
         response = {:error, :timeout}
         update_stats(:response, pid, response)
         response
@@ -53,10 +57,12 @@ defmodule Disssim.Model.Resource do
 
   defp update_stats(:request, pid) do
     Agent.get_and_update(pid, fn state ->
-      new_stats = %{state.stats |
-        total_reqs: state.stats.total_reqs + 1,
-        curr_reqs: state.stats.curr_reqs + 1
+      new_stats = %{
+        state.stats
+        | total_reqs: state.stats.total_reqs + 1,
+          curr_reqs: state.stats.curr_reqs + 1
       }
+
       new_state = %{state | stats: new_stats}
       {new_state, new_state}
     end)
@@ -64,11 +70,13 @@ defmodule Disssim.Model.Resource do
 
   defp update_stats(:response, pid, response) do
     Agent.get_and_update(pid, fn state ->
-      new_stats = %{state.stats |
-        curr_reqs: state.stats.curr_reqs - 1,
-        fail_reqs: fail_reqs(state.stats, response),
-        fail_rate: fail_rate(state.stats, response)
+      new_stats = %{
+        state.stats
+        | curr_reqs: state.stats.curr_reqs - 1,
+          fail_reqs: fail_reqs(state.stats, response),
+          fail_rate: fail_rate(state.stats, response)
       }
+
       new_state = %{state | stats: new_stats}
       {new_state, new_state}
     end)
