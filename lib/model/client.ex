@@ -1,5 +1,5 @@
 defmodule Disssim.Model.Client do
-  @keys [:id, :resource, :request_rate, :status]
+  @keys [:id, :resource, :request_rate]
   @enforce_keys @keys
   defstruct @keys
 
@@ -15,8 +15,7 @@ defmodule Disssim.Model.Client do
         id: UUID.uuid1(),
         resource: nil,
         # reqs/sec
-        request_rate: 0,
-        status: :paused
+        request_rate: 0
       },
       opts
     )
@@ -28,6 +27,7 @@ defmodule Disssim.Model.Client do
     Agent.start(fn ->
       %{
         client: client,
+        status: :paused,
         stats: %{
           total_reqs: 0,
           fail_reqs: 0,
@@ -43,16 +43,14 @@ defmodule Disssim.Model.Client do
 
   defp update_status(pid, status) when status in @states do
     Agent.update(pid, fn state ->
-      new_client = %{state.client | status: status}
-      %{state | client: new_client}
+      %{state | status: status}
     end)
   end
 
   def play(pid) do
     state = state(pid)
-    client = state.client
 
-    case client.status do
+    case state.status do
       :running ->
         {:error, "#{inspect(pid)} is already running."}
 
@@ -67,9 +65,8 @@ defmodule Disssim.Model.Client do
 
   def pause(pid) do
     state = state(pid)
-    client = state.client
 
-    case client.status do
+    case state.status do
       :running ->
         update_status(pid, :paused)
         {:ok, :paused}
@@ -81,10 +78,10 @@ defmodule Disssim.Model.Client do
 
   defp call_indefinitely(pid) do
     state = state(pid)
-    client = state.client
 
-    case client.status do
+    case state.status do
       :running ->
+        client = state.client
         call_and_wait(pid, client, {:request, "msg from client!"})
         call_indefinitely(pid)
 
@@ -97,8 +94,8 @@ defmodule Disssim.Model.Client do
     Logger.debug("Calling #{inspect(client.resource)} from client #{inspect(pid)}")
 
     Task.async(fn -> call(pid, client.resource, req) end)
-    delay = trunc(@millis_in_second / client.request_rate)
 
+    delay = trunc(@millis_in_second / client.request_rate)
     Logger.debug("Client #{inspect(pid)} waiting for #{delay} ms")
     :timer.sleep(delay)
   end
@@ -110,14 +107,14 @@ defmodule Disssim.Model.Client do
     update_stats(pid, response, ts_start, ts_end)
   end
 
-  defp update_stats(pid, {:response, _, _}, ts_start, ts_end) do
+  defp update_stats(pid, {:response, _, _}, _ts_start, _ts_end) do
     Agent.update(pid, fn state ->
       new_stats = %{state.stats | total_reqs: state.stats.total_reqs + 1}
       %{state | stats: new_stats}
     end)
   end
 
-  defp update_stats(pid, {:error, reason}, ts_start, ts_end) do
+  defp update_stats(pid, {:error, reason}, _ts_start, _ts_end) do
     Agent.update(pid, fn state ->
       timeout_reqs_incr = if reason == :timeout, do: 1, else: 0
 
