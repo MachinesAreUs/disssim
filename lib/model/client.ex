@@ -33,7 +33,8 @@ defmodule Disssim.Model.Client do
           fail_reqs: 0,
           timeout_reqs: 0,
           fail_rate: 0,
-          avg_latency: 0.0
+          avg_latency: 0.0,
+          req_latencies: []
         }
       }
     end)
@@ -107,26 +108,37 @@ defmodule Disssim.Model.Client do
     update_stats(pid, response, ts_start, ts_end)
   end
 
-  defp update_stats(pid, {:response, _, _}, _ts_start, _ts_end) do
+  defp update_stats(pid, {:response, _, _}, ts_start, ts_end) do
     Agent.update(pid, fn state ->
-      new_stats = %{state.stats | total_reqs: state.stats.total_reqs + 1}
+      new_stats =
+        %{state.stats | total_reqs: state.stats.total_reqs + 1}
+        |> latency_stats(ts_start, ts_end)
+
       %{state | stats: new_stats}
     end)
   end
 
-  defp update_stats(pid, {:error, reason}, _ts_start, _ts_end) do
+  defp update_stats(pid, {:error, reason}, ts_start, ts_end) do
     Agent.update(pid, fn state ->
       timeout_reqs_incr = if reason == :timeout, do: 1, else: 0
 
-      new_stats = %{
-        state.stats
-        | total_reqs: state.stats.total_reqs + 1,
-          fail_reqs: state.stats.fail_reqs + 1,
-          timeout_reqs: state.stats.timeout_reqs + timeout_reqs_incr,
-          fail_rate: (state.stats.fail_reqs + 1) / (state.stats.total_reqs + 1)
-      }
+      new_stats =
+        %{
+          state.stats
+          | total_reqs: state.stats.total_reqs + 1,
+            fail_reqs: state.stats.fail_reqs + 1,
+            timeout_reqs: state.stats.timeout_reqs + timeout_reqs_incr,
+            fail_rate: (state.stats.fail_reqs + 1) / (state.stats.total_reqs + 1)
+        }
+        |> latency_stats(ts_start, ts_end)
 
       %{state | stats: new_stats}
     end)
+  end
+
+  defp latency_stats(stats, ts_start, ts_end) do
+    latency = DateTime.diff(ts_end, ts_start, :millisecond)
+    stats = %{stats | req_latencies: [latency | stats.req_latencies]}
+    %{stats | avg_latency: Enum.sum(stats.req_latencies) / length(stats.req_latencies)}
   end
 end
